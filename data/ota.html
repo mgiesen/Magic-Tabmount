@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>OTA Update</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 20px;
+			}
+			.update-container {
+				border: 1px solid #ccc;
+				padding: 20px;
+				border-radius: 5px;
+			}
+			.progress {
+				width: 100%;
+				height: 20px;
+				background-color: #f0f0f0;
+				border-radius: 10px;
+				overflow: hidden;
+				margin: 10px 0;
+			}
+			.progress-bar {
+				width: 0%;
+				height: 100%;
+				background-color: #4caf50;
+				transition: width 0.3s ease;
+			}
+			.status {
+				margin: 10px 0;
+				padding: 10px;
+				border-radius: 5px;
+			}
+			.error {
+				background-color: #ffebee;
+			}
+			.success {
+				background-color: #e8f5e9;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="update-container">
+			<h2>Firmware Update</h2>
+			<form id="updateForm">
+				<input type="file" id="firmwareFile" accept=".bin" />
+				<button type="submit">Update Firmware</button>
+			</form>
+			<div class="progress">
+				<div class="progress-bar" id="progressBar"></div>
+			</div>
+			<div id="status" class="status"></div>
+		</div>
+
+		<script>
+			const form = document.getElementById("updateForm");
+			const status = document.getElementById("status");
+			const progressBar = document.getElementById("progressBar");
+			let updating = false;
+
+			form.onsubmit = async (e) => {
+				e.preventDefault();
+				const file = document.getElementById("firmwareFile").files[0];
+				if (!file) {
+					showStatus("Please select a firmware file", "error");
+					return;
+				}
+
+				try {
+					updating = true;
+					const formData = new FormData();
+					formData.append("update", file);
+
+					const response = await fetch("/ota/update", {
+						method: "POST",
+						body: formData,
+					});
+
+					if (response.ok) {
+						showStatus("Update successful! Device will restart...", "success");
+						setTimeout(() => {
+							window.location.reload();
+						}, 5000);
+					} else {
+						showStatus("Update failed!", "error");
+					}
+				} catch (error) {
+					showStatus(`Error: ${error.message}`, "error");
+				} finally {
+					updating = false;
+				}
+			};
+
+			function showStatus(message, type) {
+				status.textContent = message;
+				status.className = `status ${type}`;
+			}
+
+			// Update Progress
+			async function checkProgress() {
+				if (!updating) return;
+
+				try {
+					const response = await fetch("/ota/status");
+					const data = await response.json();
+
+					if (data.updating) {
+						const progress = (data.progress / data.total) * 100;
+						progressBar.style.width = `${progress}%`;
+						showStatus(`Updating: ${progress.toFixed(1)}%`, "info");
+					}
+				} catch (error) {
+					console.error("Error checking progress:", error);
+				}
+			}
+
+			setInterval(checkProgress, 1000);
+		</script>
+	</body>
+</html>
