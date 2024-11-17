@@ -86,6 +86,46 @@
 				box-shadow: 0 0 20px rgba(128, 128, 128, 0.2);
 			}
 
+			.tablet-icon {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				color: var(--radar-color);
+				font-size: 3rem;
+				opacity: 0.8;
+				z-index: 1;
+				animation: pinPulse 2s infinite;
+			}
+
+			@keyframes pinPulse {
+				0% {
+					transform: translate(-50%, -50%) scale(1);
+				}
+
+				50% {
+					transform: translate(-50%, -50%) scale(1.1);
+					color: #e8e8e8a7;
+				}
+
+				60% {
+					transform: translate(-50%, -50%) scale(0.95);
+					color: var(--radar-color);
+				}
+
+				70% {
+					transform: translate(-50%, -50%) scale(1.05);
+				}
+
+				80% {
+					transform: translate(-50%, -50%) scale(0.98);
+				}
+
+				100% {
+					transform: translate(-50%, -50%) scale(1);
+				}
+			}
+
 			.detection-circle {
 				position: absolute;
 				top: 50%;
@@ -97,6 +137,7 @@
 				transition: width 0.1s ease, height 0.1s ease;
 				min-width: 20%;
 				min-height: 20%;
+				z-index: 2;
 			}
 
 			.handle {
@@ -131,24 +172,50 @@
 				background: #1aff1a;
 			}
 
-			.radar-line {
+			.radar-pulse {
 				position: absolute;
 				top: 50%;
 				left: 50%;
-				width: 50%;
-				height: 2px;
-				background: var(--radar-color);
-				transform-origin: left;
-				animation: radar-sweep 4s infinite linear;
-				box-shadow: 0 0 10px var(--radar-color);
+				transform: translate(-50%, -50%);
+				width: 100%;
+				height: 100%;
+				border-radius: 50%;
+				pointer-events: none;
 			}
 
-			@keyframes radar-sweep {
-				from {
-					transform: rotate(0deg);
+			.radar-pulse::before,
+			.radar-pulse::after {
+				content: "";
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				width: 100%;
+				height: 100%;
+				border-radius: 50%;
+				opacity: 0;
+				background: radial-gradient(circle, var(--radar-color) 0%, transparent 70%);
+				animation: pingDouble 4s infinite;
+			}
+
+			.radar-pulse::after {
+				animation-delay: 2s;
+			}
+
+			@keyframes pingDouble {
+				0% {
+					transform: translate(-50%, -50%) scale(0.3);
+					opacity: 0;
 				}
-				to {
-					transform: rotate(360deg);
+				20% {
+					opacity: 0.5;
+				}
+				50% {
+					opacity: 0.2;
+				}
+				100% {
+					transform: translate(-50%, -50%) scale(1);
+					opacity: 0;
 				}
 			}
 
@@ -209,10 +276,8 @@
 					right: 1.5rem;
 				}
 
-				.title {
-					font-size: 1.4rem;
-					top: 1.5rem;
-					left: 1.5rem;
+				.tablet-icon {
+					font-size: 2.5rem;
 				}
 			}
 		</style>
@@ -226,7 +291,8 @@
 			<div class="radar-container">
 				<div class="radar-circle">
 					<div class="radar-rings"></div>
-					<div class="radar-line"></div>
+					<div class="radar-pulse"></div>
+					<i class="fas fa-tablet-alt tablet-icon"></i>
 					<div class="detection-circle" id="detectionCircle">
 						<div class="handle" id="resizeHandle">
 							<span></span>
@@ -255,13 +321,11 @@
 			let startX = 0;
 			let startSize = 0;
 
-			// Konvertierung von Prozent zu Metern (0.5-5m)
 			const percentToMeters = (percent) => {
 				const meters = 0.5 + (percent / 100) * 4.5;
 				return Math.round(meters * 100) / 100;
 			};
 
-			// Konvertierung von Metern zu Prozent
 			const metersToPercent = (meters) => {
 				return ((meters - 0.5) / 4.5) * 100;
 			};
@@ -298,7 +362,6 @@
 				handle.style.cursor = "ew-resize";
 			});
 
-			// Touch-Events
 			handle.addEventListener("touchstart", (e) => {
 				isDragging = true;
 				startX = e.touches[0].clientX;
@@ -332,7 +395,6 @@
 				}
 			};
 
-			// Initiale Größe setzen (2.75m)
 			const initialMeters = 2.75;
 			const initialPercent = metersToPercent(initialMeters);
 			detectionCircle.style.width = `${initialPercent}%`;
