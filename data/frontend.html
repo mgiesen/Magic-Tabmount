@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="de">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Magic Tabmount</title>
+		<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+		<style>
+			:root {
+				--radar-color: #00ff00;
+				--detection-color: rgba(0, 255, 0, 0.3);
+				--bg-color: #1a1a1a;
+				--circle-border: #808080;
+				--handle-color: #00ff00;
+			}
+
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				background: var(--bg-color);
+				min-height: 100vh;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+				position: relative;
+				overflow: hidden;
+			}
+
+			.icon-btn {
+				position: fixed;
+				top: 2rem;
+				right: 2rem;
+				background: rgba(42, 42, 42, 0.8);
+				border: none;
+				width: 40px;
+				height: 40px;
+				border-radius: 50%;
+				color: white;
+				cursor: pointer;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				font-size: 1.2rem;
+				transition: all 0.3s ease;
+			}
+
+			.icon-btn:hover {
+				background: rgba(42, 42, 42, 0.95);
+				color: var(--radar-color);
+			}
+
+			.main-content {
+				position: relative;
+				aspect-ratio: 1;
+				width: min(90vh, 90vw);
+				max-width: 800px;
+				max-height: 800px;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+			}
+
+			.radar-container {
+				position: relative;
+				aspect-ratio: 1;
+				width: 90%;
+				height: 90%;
+			}
+
+			.radar-circle {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				width: 100%;
+				height: 100%;
+				border-radius: 50%;
+				border: 2px solid var(--circle-border);
+				background: radial-gradient(circle, rgba(128, 128, 128, 0.1) 0%, rgba(128, 128, 128, 0.02) 100%);
+				overflow: visible;
+				box-shadow: 0 0 20px rgba(128, 128, 128, 0.2);
+			}
+
+			.detection-circle {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				border-radius: 50%;
+				border: 2px solid var(--radar-color);
+				background: var(--detection-color);
+				transition: width 0.1s ease, height 0.1s ease;
+				min-width: 20%;
+				min-height: 20%;
+			}
+
+			.handle {
+				position: absolute;
+				left: 0;
+				top: 50%;
+				transform: translate(-50%, -50%);
+				width: 24px;
+				height: 40px;
+				background: var(--handle-color);
+				border-radius: 12px;
+				cursor: ew-resize;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				gap: 4px;
+				box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+			}
+
+			.handle::before,
+			.handle::after,
+			.handle span {
+				content: "";
+				width: 12px;
+				height: 2px;
+				background: rgba(0, 0, 0, 0.5);
+				border-radius: 1px;
+			}
+
+			.handle:hover {
+				background: #1aff1a;
+			}
+
+			.radar-line {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				width: 50%;
+				height: 2px;
+				background: var(--radar-color);
+				transform-origin: left;
+				animation: radar-sweep 4s infinite linear;
+				box-shadow: 0 0 10px var(--radar-color);
+			}
+
+			@keyframes radar-sweep {
+				from {
+					transform: rotate(0deg);
+				}
+				to {
+					transform: rotate(360deg);
+				}
+			}
+
+			.radar-rings {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: repeating-radial-gradient(circle, transparent, transparent 19%, rgba(128, 128, 128, 0.1) 20%);
+			}
+
+			.modal {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background: rgba(0, 0, 0, 0.8);
+				display: none;
+				justify-content: center;
+				align-items: center;
+				z-index: 1000;
+			}
+
+			.modal-content {
+				background: #2a2a2a;
+				color: white;
+				padding: 2rem;
+				border-radius: 8px;
+				max-width: 500px;
+				width: 90%;
+				position: relative;
+			}
+
+			.close-modal {
+				position: absolute;
+				top: 1rem;
+				right: 1rem;
+				background: none;
+				border: none;
+				font-size: 1.5rem;
+				cursor: pointer;
+				color: white;
+			}
+
+			@media (max-width: 768px) {
+				.handle {
+					width: 20px;
+					height: 32px;
+				}
+
+				.icon-btn {
+					width: 32px;
+					height: 32px;
+					font-size: 1rem;
+					top: 1.5rem;
+					right: 1.5rem;
+				}
+
+				.title {
+					font-size: 1.4rem;
+					top: 1.5rem;
+					left: 1.5rem;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<button class="icon-btn settings" onclick="openModal('settings')">
+			<i class="fas fa-cog"></i>
+		</button>
+
+		<main class="main-content">
+			<div class="radar-container">
+				<div class="radar-circle">
+					<div class="radar-rings"></div>
+					<div class="radar-line"></div>
+					<div class="detection-circle" id="detectionCircle">
+						<div class="handle" id="resizeHandle">
+							<span></span>
+							<span></span>
+							<span></span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+
+		<div class="modal" id="settingsModal">
+			<div class="modal-content">
+				<button class="close-modal" onclick="closeModal('settings')">&times;</button>
+				<h2>Einstellungen</h2>
+				<p>...</p>
+			</div>
+		</div>
+
+		<script>
+			const detectionCircle = document.getElementById("detectionCircle");
+			const handle = document.getElementById("resizeHandle");
+			const radarContainer = document.querySelector(".radar-container");
+
+			let isDragging = false;
+			let startX = 0;
+			let startSize = 0;
+
+			// Konvertierung von Prozent zu Metern (0.5-5m)
+			const percentToMeters = (percent) => {
+				const meters = 0.5 + (percent / 100) * 4.5;
+				return Math.round(meters * 100) / 100;
+			};
+
+			// Konvertierung von Metern zu Prozent
+			const metersToPercent = (meters) => {
+				return ((meters - 0.5) / 4.5) * 100;
+			};
+
+			const updateSize = (clientX) => {
+				const containerRect = radarContainer.getBoundingClientRect();
+				const containerCenter = containerRect.left + containerRect.width / 2;
+				const distance = Math.abs(clientX - containerCenter);
+				const maxRadius = containerRect.width / 2;
+
+				let percentage = (distance / maxRadius) * 100;
+				percentage = Math.max(20, Math.min(100, percentage));
+
+				detectionCircle.style.width = `${percentage}%`;
+				detectionCircle.style.height = `${percentage}%`;
+			};
+
+			handle.addEventListener("mousedown", (e) => {
+				isDragging = true;
+				startX = e.clientX;
+				const style = window.getComputedStyle(detectionCircle);
+				startSize = parseFloat(style.width);
+				handle.style.cursor = "grabbing";
+			});
+
+			document.addEventListener("mousemove", (e) => {
+				if (!isDragging) return;
+				e.preventDefault();
+				updateSize(e.clientX);
+			});
+
+			document.addEventListener("mouseup", () => {
+				isDragging = false;
+				handle.style.cursor = "ew-resize";
+			});
+
+			// Touch-Events
+			handle.addEventListener("touchstart", (e) => {
+				isDragging = true;
+				startX = e.touches[0].clientX;
+				const style = window.getComputedStyle(detectionCircle);
+				startSize = parseFloat(style.width);
+			});
+
+			document.addEventListener("touchmove", (e) => {
+				if (!isDragging) return;
+				e.preventDefault();
+				updateSize(e.touches[0].clientX);
+			});
+
+			document.addEventListener("touchend", () => {
+				isDragging = false;
+			});
+
+			function openModal(type) {
+				const modal = document.getElementById(`${type}Modal`);
+				modal.style.display = "flex";
+			}
+
+			function closeModal(type) {
+				const modal = document.getElementById(`${type}Modal`);
+				modal.style.display = "none";
+			}
+
+			window.onclick = function (event) {
+				if (event.target.classList.contains("modal")) {
+					event.target.style.display = "none";
+				}
+			};
+
+			// Initiale Größe setzen (2.75m)
+			const initialMeters = 2.75;
+			const initialPercent = metersToPercent(initialMeters);
+			detectionCircle.style.width = `${initialPercent}%`;
+			detectionCircle.style.height = `${initialPercent}%`;
+		</script>
+	</body>
+</html>
