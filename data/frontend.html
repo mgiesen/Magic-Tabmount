@@ -95,7 +95,8 @@
 				font-size: 3rem;
 				opacity: 0.8;
 				z-index: 1;
-				animation: pinPulse 2s infinite;
+				animation: pinPulse 4s infinite;
+				animation-delay: -4s;
 			}
 
 			@keyframes pinPulse {
@@ -133,11 +134,11 @@
 				transform: translate(-50%, -50%);
 				border-radius: 50%;
 				border: 2px solid var(--radar-color);
-				background: var(--detection-color);
+
 				transition: width 0.1s ease, height 0.1s ease;
 				min-width: 20%;
 				min-height: 20%;
-				z-index: 2;
+				z-index: 1;
 			}
 
 			.handle {
@@ -196,6 +197,7 @@
 				opacity: 0;
 				background: radial-gradient(circle, var(--radar-color) 0%, transparent 70%);
 				animation: pingDouble 4s infinite;
+				animation-delay: -2s;
 			}
 
 			.radar-pulse::after {
@@ -208,7 +210,7 @@
 					opacity: 0;
 				}
 				20% {
-					opacity: 0.5;
+					opacity: 0.4;
 				}
 				50% {
 					opacity: 0.2;
@@ -278,6 +280,7 @@
 
 				.tablet-icon {
 					font-size: 2.5rem;
+					z-index: 2;
 				}
 			}
 		</style>
