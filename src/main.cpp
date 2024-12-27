@@ -14,7 +14,6 @@
 #include <Adafruit_MCP4725.h>
 #include <ArduinoJson.h>
 #include <WiFiUdp.h>
-#include <ArduinoOTA.h>
 
 // Benutzerdefinierte Hardware-Bibliotheken
 #include "LogoLED.h"
@@ -82,6 +81,7 @@ volatile bool devicePresent = false;
 volatile bool stateChange = true;
 
 // Instanzen
+HardwareSerial SensorSerial(1);
 LD2410 humanSensor;
 LogoLED<LED_PIN> logoLED(NUMBER_OF_LEDS);
 DeviceDetection deviceSensor(DEVICE_SENSOR_PIN, INPUT_PULLUP, devicePresent);
@@ -175,11 +175,11 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
   switch (type)
   {
   case WS_EVT_CONNECT:
-    DEBUG_SERIAL.printf("WebSocket-Client #%u verbunden von %s\n", client->id(), client->remoteIP().toString().c_str());
+    // DEBUG_SERIAL.printf("WebSocket-Client #%u verbunden von %s\n", client->id(), client->remoteIP().toString().c_str());
     notifyClients();
     break;
   case WS_EVT_DISCONNECT:
-    DEBUG_SERIAL.printf("WebSocket-Client #%u getrennt\n", client->id());
+    // DEBUG_SERIAL.printf("WebSocket-Client #%u getrennt\n", client->id());
     break;
   case WS_EVT_DATA:
     handleWebSocketMessage(arg, data, len);
@@ -207,10 +207,13 @@ void initializeMotorControl()
   pinMode(STEPPER_SLEEP, OUTPUT);
   digitalWrite(STEPPER_SLEEP, HIGH);
 
+  pinMode(STEPPER_ENABLE, OUTPUT);
+  digitalWrite(STEPPER_ENABLE, HIGH);
+
   I2C.begin(DAC_SDA_PIN, DAC_SCL_PIN);
   if (!dac.begin(DAC_I2C_ADDRESS, &I2C))
   {
-    DEBUG_SERIAL.println("MCP4725 nicht gefunden!");
+    // DEBUG_SERIAL.println("MCP4725 nicht gefunden!");
   }
   dac.setVoltage(1350, false);
 }
@@ -219,7 +222,7 @@ void initializeFileSystem()
 {
   if (!SPIFFS.begin(true))
   {
-    DEBUG_SERIAL.println("SPIFFS Fehler beim Mounten");
+    // DEBUG_SERIAL.println("SPIFFS Fehler beim Mounten");
   }
 }
 
@@ -229,8 +232,8 @@ void initializeWiFi()
   WiFi.softAP(ssid, password);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
 
-  DEBUG_SERIAL.print("AP IP Adresse: ");
-  DEBUG_SERIAL.println(WiFi.softAPIP());
+  // DEBUG_SERIAL.print("AP IP Adresse: ");
+  // DEBUG_SERIAL.println(WiFi.softAPIP());
 }
 
 void initializeWebServer()
@@ -238,15 +241,11 @@ void initializeWebServer()
   ws.onEvent(onEvent);
   server.addHandler(&ws);
 
-  // OTA Manager initialisieren
-  firmwareUpdateManager = new FirmwareUpdateManager(&server, "admin", "admin");
-  firmwareUpdateManager->begin();
-
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(SPIFFS, "/index.html", "text/html"); });
 
   server.begin();
-  DEBUG_SERIAL.println("HTTP Server gestartet");
+  // DEBUG_SERIAL.println("HTTP Server gestartet");
 }
 
 void initializeTimer()
@@ -261,8 +260,9 @@ void initializeSensors()
 {
   deviceSensor.beginOutputObservation(onDevicePresenceChange);
 
-  humanSensor.useDebug(DEBUG_SERIAL);
-  humanSensor.beginUART(HUMAN_PRESENCE_TX, HUMAN_PRESENCE_RX, RADAR_SERIAL);
+  // humanSensor.beginUART(HUMAN_PRESENCE_TX, HUMAN_PRESENCE_RX, RADAR_SERIAL); // Weiterleitung der seriellen Kommunikation an USB Port
+  SensorSerial.begin(256000, SERIAL_8N1, HUMAN_PRESENCE_TX, HUMAN_PRESENCE_RX);
+
   humanSensor.beginOutputObservation(HUMAN_PRESENCE_PIN, onHumanPresenceChange, INPUT_PULLDOWN);
 
   stateQueue.valid = false;
@@ -271,53 +271,8 @@ void initializeSensors()
 void initializeSerial()
 {
   delay(10);
-  DEBUG_SERIAL.begin(115200);
+  DEBUG_SERIAL.begin(256000);
   delay(100);
-}
-
-void initializeOTA()
-{
-  // Standard ArduinoOTA konfigurieren
-  ArduinoOTA
-      .setHostname("Magic-Tabmount-DEV") // Optional: Name im Netzwerk
-      .setPassword("73849502537")        // Optional: Passwort für Upload
-      .setPort(8266)                     // Optional: Port für Updates
-      .onStart([]()
-               {
-            // Wichtige Tasks stoppen
-            displayController.activate(false);
-            logoLED.off(); })
-      .onEnd([]()
-             {
-               // Optional: Ende-Handling
-             })
-      .onProgress([](unsigned int progress, unsigned int total)
-                  {
-            // Optional: Fortschritt anzeigen
-            float percentage = (progress / (float)total) * 100;
-            DEBUG_SERIAL.printf("Progress: %u%%\r", percentage); })
-      .onError([](ota_error_t error)
-               {
-            DEBUG_SERIAL.printf("Error[%u]: ", error);
-            switch (error) {
-                case OTA_AUTH_ERROR: 
-                    DEBUG_SERIAL.println("Auth Failed");
-                    break;
-                case OTA_BEGIN_ERROR: 
-                    DEBUG_SERIAL.println("Begin Failed");
-                    break;
-                case OTA_CONNECT_ERROR: 
-                    DEBUG_SERIAL.println("Connect Failed");
-                    break;
-                case OTA_RECEIVE_ERROR: 
-                    DEBUG_SERIAL.println("Receive Failed");
-                    break;
-                case OTA_END_ERROR: 
-                    DEBUG_SERIAL.println("End Failed");
-                    break;
-            } });
-
-  ArduinoOTA.begin();
 }
 
 // ************************************************************************
@@ -387,17 +342,23 @@ void setup()
   initializeMotorControl();
   initializeFileSystem();
   initializeWiFi();
-  initializeOTA();
   initializeWebServer();
   initializeTimer();
   initializeSensors();
-
-  DEBUG_SERIAL.println("Setup abgeschlossen");
 }
 
 void loop()
 {
-  ArduinoOTA.handle();
+  if (SensorSerial.available())
+  {
+    DEBUG_SERIAL.write(SensorSerial.read());
+  }
+
+  if (DEBUG_SERIAL.available())
+  {
+    SensorSerial.write(DEBUG_SERIAL.read());
+  }
+
   ws.cleanupClients();
   handleStateUpdates();
   updateDeviceState();
