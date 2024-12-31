@@ -19,7 +19,7 @@ Insbesondere die älteren iPad Modelle entsprechen heute nur noch selten den Lei
 
 Die automatische Aktivierung des Displays bei Annäherung fühlt sich nicht nur magisch an, sondern spart auch Zeit und erfordert nicht den Einsatz der Hände, was insbesondere beim Kochen nützich ist.
 
-[PLATZHALTER VIDEO]
+https://github.com/user-attachments/assets/31c4c549-1fe4-4a8e-a986-a3c7149a10a7
 
 ## Technische Challange
 
