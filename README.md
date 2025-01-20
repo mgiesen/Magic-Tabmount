@@ -39,7 +39,7 @@ Der Einsatz eines Elektromagneten an der unteren Geräteseite liegt initial auf 
 
 Daher habe ich mich dazu entschlossen, einen starken Neodymmagnet einzusetzen, der durch einen kleinen Stepper Motor verschoben wird. Dies führt zu einem minimalen Stromverbrauch, da nur beim Änderung des Displayzustandes Energie benötigt wird.
 
-![Gehäuse](Readme/housing_3.png)
+![Gehäuse](Readme/housing_2.png)
 
 In Summe integriert die Schaltung entsprechend einen mmWave-Radarsensor, zur Anwesenheitserkennung von Personen, einen kleinen Stepper Motor zur Verschiebung des Magneten, sowie entsprechender Steuerungselektronik.
 
