@@ -29,7 +29,7 @@ Um auch den notwendigen Zwischenschritt des "Entsperrens" zu umgehen, habe ich m
 
 Hierzu verfügt das iPad über zwei magnetoresistive Sensoren, die erkennen, dass ein Smart Cover montiert ist und ob dieses auf- oder zugeklappt ist. Mit einer speziellen Folie, lassen sich die im Cover verbauten Magnete sichtbar machen. Die zwei runden Magnete sind für die Sperrung/Entsperrung des Displays erforderlich.
 
-![Cover](Readme/cover_1.jpg)
+![Cover](Readme/cover_1.webp)
 
 ## Integrierte Schaltung
 
@@ -39,11 +39,11 @@ Der Einsatz eines Elektromagneten an der unteren Geräteseite liegt initial auf 
 
 Daher habe ich mich dazu entschlossen, einen starken Neodymmagnet einzusetzen, der durch einen kleinen Stepper Motor verschoben wird. Dies führt zu einem minimalen Stromverbrauch, da nur beim Änderung des Displayzustandes Energie benötigt wird.
 
-![Gehäuse](Readme/housing_2.png)
+![Gehäuse](Readme/housing_2.webp)
 
 In Summe integriert die Schaltung entsprechend einen mmWave-Radarsensor, zur Anwesenheitserkennung von Personen, einen kleinen Stepper Motor zur Verschiebung des Magneten, sowie entsprechender Steuerungselektronik.
 
-![Gehäuse](Readme/housing_4.png)
+![Gehäuse](Readme/housing_4.webp)
 
 ## Planung der Elektronik
 
@@ -53,13 +53,13 @@ Zur Auswertung der Signale und Steuerung der Logik ist ein Mikrocontroller verba
 
 Für eine besondere, persönliche Note, habe ich das vorderseitige Produktlogo aus Semi-Transparentem Material gedruckt, um es aktiv zu hinterleuchten. Somit integriert die Platine zusätzlich vier RGB LEDs, die über den Mikrocontroller gesteuert werden. Ein rückseitig verbauter Hall-Sensor prüft, ob das iPad anliegt, oder nicht. Sobald das iPad angelegt ist, wird die Logobeleuchtung ausgeschlatet.
 
-![PCB](Readme/pcb_view_2.png)
+![PCB](Readme/pcb_view_2.webp)
 
 ### PCB Layout
 
 Aufgrund der hohen Anzahl an Elektronik Komponenten, habe ich versucht ausschließlich auf SMD Komponenten zu setzen, sodass ich einen Großteil der Komponetnten mittels Stencil bestücken konnte. Funktionsbedingt musste lediglich der Hall Sensor zur Geräteerkennung, als auch die Logobeleuchtung auf die Unterseite des PCBs gelegt werden.
 
-![PCB](Readme/pcb_view_1.png)
+![PCB](Readme/pcb_view_1.webp)
 
 ### Ergebnis
 
@@ -67,7 +67,7 @@ Mittels Stencil und Hot-Plate ließen sich alle Komponenten schnell und einfach 
 
 Die seitliche Tasche ermöglicht es ein Standard USB C auf Lightning Kabel einzurollen und das Gerät über einen Winkeladapter zu laden.
 
-![PCB](Readme/result_1.png)
+![PCB](Readme/result_1.webp)
 
 ## Gehäuse
 
@@ -75,18 +75,18 @@ Während des Prototypings und ohne sonderlichen Fokus auf einen marketingtauglic
 
 Das Gehäusedesign sollte initial kleinstmöglich und funktionsorientiert gestaltet sein.
 
-![PCB](Readme/prototype_1.png)
+![PCB](Readme/prototype_1.webp)
 
 Problemtaisch war der Magnet an der oberen Geräteecke, ohne den eine Steuerung des Displays nicht möglich war. Der zuerst aufgeklebte Magnet störte bei der Bedienung des Tablets in der Hand, weswegen ich das Design an die Gerätemaße anglich, um den Magnet zu integrieren.
 
-![PCB](Readme/old_housing_2.jpeg)
+![PCB](Readme/old_housing_2.webp)
 
 Hinter einer kraftschlüssig aufgesetzten Kappe, liegen zwei Schraubpunkte, über die der Halter an der Wand montiert werden kann.
 
-![PCB](Readme/setup_1.png)
+![PCB](Readme/setup_1.webp)
 
 Für eine gute Druckbarkeit des Gehäuses und einheitliche Oberflächen, mussten alle Oberseiten auf der Druckplatte des 3D Druckers aufliegen.
 
-![PCB](Readme/setup_2.png)
+![PCB](Readme/setup_2.webp)
 
 Daher ist der innere Ring mehrteilig gedruckt und anschließend formschlüssig montiert und verschraubt.
