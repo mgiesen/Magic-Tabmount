@@ -1,334 +1,94 @@
 // ************************************************************************
-// Includes und Definitionen
+// Magic Tabmount - Firmware
+//
+// Stufe 1: Der ESP32 verbindet sich mit dem Heimnetz (WLAN-Client) und
+// hostet ein Dashboard zur Steuerung des Hubs. Das Dashboard zeigt
+// aktuell "Hello World".
 // ************************************************************************
 
-// Kern-Bibliotheken für Arduino & ESP32
 #include <Arduino.h>
 #include <WiFi.h>
-#include <SPIFFS.h>
-#include <Wire.h>
-
-// Kommunikationsbibliotheken
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <Adafruit_MCP4725.h>
-#include <ArduinoJson.h>
-#include <WiFiUdp.h>
 
-// Benutzerdefinierte Hardware-Bibliotheken
-#include "LogoLED.h"
-#include "DeviceDetection.h"
-#include "DisplayController.h"
-#include "LD2410.h"
-#include "FirmwareUpdate.h"
+#include "secrets.h"
 
 // ************************************************************************
-// Pin und Konstanten Definitionen
+// Konstanten und globale Instanzen
 // ************************************************************************
 
-// Namensgebung
 #define DEBUG_SERIAL Serial
-#define RADAR_SERIAL Serial2
 
-// Logo LED
-#define NUMBER_OF_LEDS 4
-#define LED_PIN 6
-
-// Geräteerkennung
-#define DEVICE_SENSOR_PIN 4
-
-// LD2410 Sensor zur Anwesenheitserkennung
-#define HUMAN_PRESENCE_PIN 5
-#define HUMAN_PRESENCE_RX 17
-#define HUMAN_PRESENCE_TX 18
-
-// Schrittmotor
-#define STEP_PIN 9
-#define DIR_PIN 10
-#define STEPPER_ENABLE 8
-#define STEPPER_SLEEP 15
-
-#define DAC_I2C_ADDRESS 0x60
-#define DAC_SDA_PIN 14
-#define DAC_SCL_PIN 13
-
-// ************************************************************************
-// Globale Variablen und Instanzen
-// ************************************************************************
-
-// Konfiguration des DAC
-Adafruit_MCP4725 dac;
-TwoWire I2C = TwoWire(0);
-
-// Konfiguration des Webservers
-IPAddress apIP(192, 168, 4, 1);
-const char *ssid = "Magic Tabmount DEV";
-const char *password = "12345678";
-
-// Webserver- und WebSocket-Instanzen
 AsyncWebServer server(80);
-AsyncWebSocket ws("/ws");
-
-// Vorwärtsdeklarationen
-void onHumanPresenceChange(bool presence);
-void onDevicePresenceChange(bool presence);
-void handleWebSocketMessage(void *arg, uint8_t *data, size_t len);
-void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
-
-// Laufzeitvariablen
-volatile bool humanPresent = false;
-volatile bool devicePresent = false;
-volatile bool stateChange = true;
-
-// Instanzen
-HardwareSerial SensorSerial(1);
-LD2410 humanSensor;
-LogoLED<LED_PIN> logoLED(NUMBER_OF_LEDS);
-DeviceDetection deviceSensor(DEVICE_SENSOR_PIN, INPUT_PULLUP, devicePresent);
-DisplayController displayController(STEP_PIN, DIR_PIN, STEPPER_ENABLE, STEPPER_SLEEP, 10, 3500, 700);
-FirmwareUpdateManager *firmwareUpdateManager;
-
-// Logo Helligkeit
-int logoBrightness = 230;
-
-// Warteschlange für Statusänderungen
-struct StateUpdate
-{
-  bool human;
-  bool device;
-  bool valid;
-} stateQueue;
-
-portMUX_TYPE stateMux = portMUX_INITIALIZER_UNLOCKED;
-
-// Timer für verzögerte Aktualisierungen
-hw_timer_t *updateTimer = NULL;
-volatile bool updatePending = false;
 
 // ************************************************************************
-// Interrupt Service Routinen
+// Dashboard (statisches HTML)
 // ************************************************************************
 
-void IRAM_ATTR onUpdateTimer()
-{
-  updatePending = true;
-}
-
-void IRAM_ATTR onHumanPresenceChange(bool presence)
-{
-  portENTER_CRITICAL_ISR(&stateMux);
-  humanPresent = presence;
-  stateQueue.human = presence;
-  stateQueue.valid = true;
-  stateChange = true;
-  portEXIT_CRITICAL_ISR(&stateMux);
-}
-
-void IRAM_ATTR onDevicePresenceChange(bool presence)
-{
-  portENTER_CRITICAL_ISR(&stateMux);
-  devicePresent = presence;
-  stateQueue.device = presence;
-  stateQueue.valid = true;
-  stateChange = true;
-  portEXIT_CRITICAL_ISR(&stateMux);
-}
-
-// ************************************************************************
-// WebSocket Funktionen
-// ************************************************************************
-
-void notifyClients()
-{
-  if (ws.count() > 0)
-  { // Nur senden, wenn Clients verbunden sind
-    StaticJsonDocument<200> doc;
-    doc["humanPresent"] = humanPresent;
-    doc["devicePresent"] = devicePresent;
-    doc["logoBrightness"] = logoBrightness;
-
-    String jsonString;
-    serializeJson(doc, jsonString);
-
-    ws.textAll(jsonString);
-  }
-}
-
-void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
-{
-  AwsFrameInfo *info = (AwsFrameInfo *)arg;
-  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
-  {
-    String message = String((char *)data).substring(0, len);
-
-    if (message.startsWith("setBrightness:"))
-    {
-      logoBrightness = message.substring(14).toInt();
-      logoLED.setBrightness(logoBrightness);
-      notifyClients();
+const char DASHBOARD_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Magic Tabmount</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1115;
+      color: #f5f5f7;
     }
-  }
-}
-
-void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
-{
-  switch (type)
-  {
-  case WS_EVT_CONNECT:
-    // DEBUG_SERIAL.printf("WebSocket-Client #%u verbunden von %s\n", client->id(), client->remoteIP().toString().c_str());
-    notifyClients();
-    break;
-  case WS_EVT_DISCONNECT:
-    // DEBUG_SERIAL.printf("WebSocket-Client #%u getrennt\n", client->id());
-    break;
-  case WS_EVT_DATA:
-    handleWebSocketMessage(arg, data, len);
-    break;
-  case WS_EVT_PONG:
-  case WS_EVT_ERROR:
-    break;
-  }
-}
+    h1 { font-size: 2.5rem; margin: 0; }
+    p { color: #8a8a8f; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Hello World</h1>
+  <p>Magic Tabmount Dashboard</p>
+</body>
+</html>
+)rawliteral";
 
 // ************************************************************************
 // Initialisierungsfunktionen
 // ************************************************************************
 
-void initializeLED()
+void initializeSerial()
 {
-  logoLED.begin();
-  logoLED.setBrightness(logoBrightness);
-  logoLED.setColor(255, 255, 255);
-  logoLED.on();
-}
-
-void initializeMotorControl()
-{
-  pinMode(STEPPER_SLEEP, OUTPUT);
-  digitalWrite(STEPPER_SLEEP, HIGH);
-
-  pinMode(STEPPER_ENABLE, OUTPUT);
-  digitalWrite(STEPPER_ENABLE, HIGH);
-
-  I2C.begin(DAC_SDA_PIN, DAC_SCL_PIN);
-  if (!dac.begin(DAC_I2C_ADDRESS, &I2C))
-  {
-    // DEBUG_SERIAL.println("MCP4725 nicht gefunden!");
-  }
-  dac.setVoltage(1350, false);
-}
-
-void initializeFileSystem()
-{
-  if (!SPIFFS.begin(true))
-  {
-    // DEBUG_SERIAL.println("SPIFFS Fehler beim Mounten");
-  }
+  DEBUG_SERIAL.begin(115200);
+  delay(100);
 }
 
 void initializeWiFi()
 {
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(ssid, password);
-  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-  // DEBUG_SERIAL.print("AP IP Adresse: ");
-  // DEBUG_SERIAL.println(WiFi.softAPIP());
+  DEBUG_SERIAL.printf("Verbinde mit WLAN '%s'", WIFI_SSID);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    DEBUG_SERIAL.print(".");
+  }
+
+  DEBUG_SERIAL.println();
+  DEBUG_SERIAL.print("Verbunden. IP-Adresse: ");
+  DEBUG_SERIAL.println(WiFi.localIP());
 }
 
 void initializeWebServer()
 {
-  ws.onEvent(onEvent);
-  server.addHandler(&ws);
-
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-            { request->send(SPIFFS, "/index.html", "text/html"); });
+            { request->send_P(200, "text/html", DASHBOARD_HTML); });
 
   server.begin();
-  // DEBUG_SERIAL.println("HTTP Server gestartet");
-}
-
-void initializeTimer()
-{
-  updateTimer = timerBegin(0, 80, true);
-  timerAttachInterrupt(updateTimer, &onUpdateTimer, true);
-  timerAlarmWrite(updateTimer, 100000, true);
-  timerAlarmEnable(updateTimer);
-}
-
-void initializeSensors()
-{
-  deviceSensor.beginOutputObservation(onDevicePresenceChange);
-
-  // humanSensor.beginUART(HUMAN_PRESENCE_TX, HUMAN_PRESENCE_RX, RADAR_SERIAL); // Weiterleitung der seriellen Kommunikation an USB Port
-  SensorSerial.begin(256000, SERIAL_8N1, HUMAN_PRESENCE_TX, HUMAN_PRESENCE_RX);
-
-  humanSensor.beginOutputObservation(HUMAN_PRESENCE_PIN, onHumanPresenceChange, INPUT_PULLDOWN);
-
-  stateQueue.valid = false;
-}
-
-void initializeSerial()
-{
-  delay(10);
-  DEBUG_SERIAL.begin(256000);
-  delay(100);
-}
-
-// ************************************************************************
-// Hauptfunktionen für den Loop
-// ************************************************************************
-
-void handleStateUpdates()
-{
-  if (updatePending)
-  {
-    portENTER_CRITICAL(&stateMux);
-    bool shouldUpdate = stateQueue.valid;
-    if (shouldUpdate)
-    {
-      stateQueue.valid = false;
-    }
-    portEXIT_CRITICAL(&stateMux);
-
-    if (shouldUpdate)
-    {
-      notifyClients();
-    }
-    updatePending = false;
-  }
-}
-
-void updateDeviceState()
-{
-  if (stateChange)
-  {
-    if (devicePresent == false)
-    {
-      if (humanPresent)
-      {
-        logoLED.setColor(0, 128, 0);
-      }
-      else
-      {
-        logoLED.setColor(255, 255, 255);
-      }
-    }
-    else
-    {
-      logoLED.setColor(0, 0, 0);
-
-      if (humanPresent)
-      {
-        displayController.activate(true);
-      }
-      else
-      {
-        displayController.activate(false);
-      }
-    }
-    stateChange = false;
-  }
+  DEBUG_SERIAL.println("HTTP-Server gestartet");
 }
 
 // ************************************************************************
@@ -338,28 +98,11 @@ void updateDeviceState()
 void setup()
 {
   initializeSerial();
-  initializeLED();
-  initializeMotorControl();
-  initializeFileSystem();
   initializeWiFi();
   initializeWebServer();
-  initializeTimer();
-  initializeSensors();
 }
 
 void loop()
 {
-  if (SensorSerial.available())
-  {
-    DEBUG_SERIAL.write(SensorSerial.read());
-  }
-
-  if (DEBUG_SERIAL.available())
-  {
-    SensorSerial.write(DEBUG_SERIAL.read());
-  }
-
-  ws.cleanupClients();
-  handleStateUpdates();
-  updateDeviceState();
+  // AsyncWebServer arbeitet ereignisbasiert, der Loop bleibt frei.
 }
