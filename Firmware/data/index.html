@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Magic Tabmount</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="card">
+    <h1>Magic Tabmount</h1>
+    <div class="conn" id="conn"><span class="cdot"></span><span id="connText">Verbinde&hellip;</span></div>
+
+    <div class="section-label">iPad-Erkennung</div>
+    <div class="status">
+      <span id="dot" class="dot"></span>
+      <span id="statusText" class="status-text">&hellip;</span>
+    </div>
+
+    <div class="section-label mt28">Presence Sensor</div>
+    <div class="status tight">
+      <span id="sensorDot" class="dot"></span>
+      <span id="sensorVersion" class="status-text">Warte auf Sensor&hellip;</span>
+    </div>
+    <div class="status">
+      <span id="personDot" class="dot"></span>
+      <span id="personText" class="status-text">Warte auf Sensor&hellip;</span>
+    </div>
+
+    <div class="section-label">Display</div>
+    <div class="toggle-row">
+      <span class="label" id="displayLabel">Display aus</span>
+      <label class="switch">
+        <input type="checkbox" id="displayToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="section-label mt28">Motorstrom (VREF)</div>
+    <div class="slider-row">
+      <input type="range" id="dac" min="350" max="2000" step="5" value="600">
+      <span class="hexlabel" id="dacLabel">&ndash;</span>
+    </div>
+
+    <div class="section-label mt28">Logo-Beleuchtung</div>
+    <div class="led-row">
+      <input type="color" id="color" value="#ffffff">
+      <span class="hexlabel" id="hex">#FFFFFF</span>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
