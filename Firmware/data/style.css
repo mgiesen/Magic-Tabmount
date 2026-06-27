@@ -11,7 +11,79 @@ body {
   background: #181b22; border: 1px solid #23272f; border-radius: 20px;
 }
 h1 { font-size: 1.4rem; margin: 0 0 4px; }
+.subtitle { font-size: 0.8rem; color: #8a8a8f; margin: 0 0 4px; }
 .section-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #8a8a8f; margin-bottom: 10px; }
+
+/* Ansichtswechsel: sanftes Einblenden */
+.view { animation: viewIn 0.22s ease; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Settings-Icon (Zahnrad) im Presence-Sensor-Block – nutzt data/settings.svg als Maske */
+.icon-btn {
+  margin-left: auto; flex-shrink: 0; width: 22px; height: 22px; padding: 0;
+  border: none; background-color: #8a8a8f; cursor: pointer;
+  -webkit-mask: url(/settings.svg) center / contain no-repeat;
+  mask: url(/settings.svg) center / contain no-repeat;
+  transition: background-color 0.2s, transform 0.2s;
+}
+.icon-btn:hover { background-color: #f5f5f7; transform: rotate(30deg); }
+
+/* Zurück-Button auf der Sensor-Detailseite */
+.back-btn {
+  display: inline-flex; align-items: center; gap: 4px; margin: 0 0 16px -4px;
+  padding: 4px 6px; border: none; background: none; cursor: pointer;
+  color: #8a8a8f; font: inherit; font-size: 0.85rem; font-weight: 500;
+  border-radius: 8px; transition: color 0.2s, background 0.2s;
+}
+.back-btn:hover { color: #f5f5f7; background: #1f2430; }
+.back-btn svg { width: 18px; height: 18px; }
+
+/* Karten-Container (wie ein Gate-Band) */
+.panel { padding: 12px 14px; border-radius: 12px; background: #1c2029; }
+
+/* "Anzahl Gates": steuert die Reichweite und blendet Bänder ein/aus */
+.gatecount-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.gatecount-label { flex-shrink: 0; font-size: 0.85rem; font-weight: 500; color: #c7c7cc; }
+.gatecount-val { width: 18px; flex-shrink: 0; text-align: right; font-variant-numeric: tabular-nums; font-size: 0.85rem; color: #c7c7cc; }
+
+/* Bänder-Liste: pro Band (Gate) zwei Kanäle (Bewegung/Ruhe).
+   Regler = Schwelle (Soll), Balkenfüllung = Live-Energie. */
+.gates { display: flex; flex-direction: column; gap: 12px; }
+.gate { position: relative; padding: 12px 14px; border-radius: 12px; background: #1c2029; }
+/* Deaktiviertes Gate: Karte bleibt stehen, wird aber überdeckt */
+.gate-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  border-radius: 12px; background: rgba(20, 23, 29, 0.82); backdrop-filter: blur(1.5px);
+  color: #8a8a8f; font-size: 0.8rem; font-weight: 500;
+  opacity: 0; pointer-events: none; transition: opacity 0.18s;
+}
+.gate.off .gate-overlay { opacity: 1; pointer-events: auto; }
+.gate-idx { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #8a8a8f; margin-bottom: 10px; }
+.gate-bar { display: flex; align-items: center; gap: 10px; }
+.gate-bar + .gate-bar { margin-top: 9px; }
+.bar-tag { width: 32px; flex-shrink: 0; font-size: 0.72rem; color: #8a8a8f; transition: color 0.2s; }
+.gate-bar.tripped .bar-tag { color: #30d158; }
+.gate-thr { width: 30px; flex-shrink: 0; text-align: right; font-variant-numeric: tabular-nums; font-size: 0.8rem; color: #c7c7cc; }
+/* Schwelle 100 -> Band deaktiviert: gedämpft darstellen */
+.gate-bar.disabled .bar-tag, .gate-bar.disabled .gate-thr { color: #565b66; }
+
+/* höhere Spezifität als die globale input[type=range]-Regel (0,1,1) nötig */
+input[type=range].gate-range {
+  flex: 1; height: 18px; border-radius: 6px; border: 1px solid #2a2f3a;
+  cursor: pointer; background: #2a2f3a; /* wird per JS durch den Energie-Gradienten ersetzt */
+}
+/* Thumb = schmale Schwellen-Markierung, die über den Balken hinausragt */
+input[type=range].gate-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 5px; height: 26px;
+  border-radius: 3px; background: #f5f5f7; border: none; cursor: ew-resize;
+  box-shadow: 0 0 0 1px #0008, 0 1px 3px #0006;
+}
+input[type=range].gate-range::-moz-range-thumb {
+  width: 5px; height: 26px; border-radius: 3px; background: #f5f5f7;
+  border: none; cursor: ew-resize; box-shadow: 0 0 0 1px #0008, 0 1px 3px #0006;
+}
+.gate-bar.disabled input[type=range].gate-range::-webkit-slider-thumb { background: #6c727e; box-shadow: 0 0 0 1px #0006; }
+.gate-bar.disabled input[type=range].gate-range::-moz-range-thumb { background: #6c727e; box-shadow: 0 0 0 1px #0006; }
 .mt28 { margin-top: 28px; }
 .status {
   display: flex; align-items: center; gap: 12px;
@@ -23,6 +95,8 @@ h1 { font-size: 1.4rem; margin: 0 0 4px; }
 .status-text { font-size: 1rem; font-weight: 500; }
 .status.tight { margin-bottom: 10px; }
 .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.mode-row { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid #23272f; }
+.locked { opacity: 0.4; pointer-events: none; transition: opacity 0.2s; }
 .toggle-row .label { font-size: 1rem; font-weight: 500; }
 .switch { position: relative; width: 52px; height: 32px; flex-shrink: 0; }
 .switch input { opacity: 0; width: 0; height: 0; }
@@ -44,11 +118,33 @@ input[type=range]::-webkit-slider-thumb {
 input[type=range]::-moz-range-thumb {
   width: 22px; height: 22px; border-radius: 50%; background: #f5f5f7; border: none; cursor: pointer;
 }
-#dacLabel { min-width: 56px; text-align: right; }
 input[type=color] { -webkit-appearance: none; appearance: none; width: 64px; height: 64px; border: none; border-radius: 14px; background: none; cursor: pointer; padding: 0; }
 input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
 input[type=color]::-webkit-color-swatch { border: 1px solid #2a2f3a; border-radius: 14px; }
 .hexlabel { font-variant-numeric: tabular-nums; color: #c7c7cc; font-size: 0.95rem; }
-.conn { margin: 6px 0 28px; font-size: 0.75rem; color: #8a8a8f; display: flex; align-items: center; gap: 8px; }
+.conn { margin: 6px 0 24px; font-size: 0.75rem; color: #8a8a8f; display: flex; align-items: center; gap: 8px; }
 .conn .cdot { width: 8px; height: 8px; border-radius: 50%; background: #ff453a; }
 .conn.online .cdot { background: #30d158; }
+
+/* ====================================================================
+   Smartphone: Kartendesign weglassen -> vollflächige, randlose UI.
+   Desktop/iPad (> 600px) behalten die zentrierte Karte.
+   ==================================================================== */
+@media (max-width: 600px) {
+  body { display: block; background: #181b22; } /* = Kartenfarbe, kein sichtbarer Rahmen */
+  .card {
+    max-width: none; width: 100%; margin: 0; min-height: 100vh;
+    border: none; border-radius: 0;
+    /* Safe-Area (Notch/Home-Indicator) berücksichtigen */
+    padding: max(22px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right))
+             max(22px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  }
+  h1 { font-size: 1.55rem; }
+
+  /* Etwas kompakteres vertikales Raster auf kleinen Displays */
+  .status { margin-bottom: 20px; }
+  .status.tight { margin-bottom: 10px; }
+  .mode-row { margin-bottom: 22px; padding-bottom: 20px; }
+  .mt28 { margin-top: 22px; }
+  .conn { margin-bottom: 22px; }
+}

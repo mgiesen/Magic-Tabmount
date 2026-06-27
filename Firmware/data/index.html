@@ -2,51 +2,98 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Magic Tabmount</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div class="card">
-    <h1>Magic Tabmount</h1>
-    <div class="conn" id="conn"><span class="cdot"></span><span id="connText">Verbinde&hellip;</span></div>
 
-    <div class="section-label">iPad-Erkennung</div>
-    <div class="status">
-      <span id="dot" class="dot"></span>
-      <span id="statusText" class="status-text">&hellip;</span>
+    <!-- ===================== Dashboard-Ansicht ===================== -->
+    <div class="view" id="dashboardView">
+      <h1>Magic Tabmount</h1>
+      <div class="conn" id="conn"><span class="cdot"></span><span id="connText">Verbinde&hellip;</span></div>
+
+      <div class="toggle-row mode-row">
+        <span class="label">Manueller Modus</span>
+        <label class="switch">
+          <input type="checkbox" id="manualToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="section-label">iPad Sensor</div>
+      <div class="status">
+        <span id="dot" class="dot"></span>
+        <span id="statusText" class="status-text">&hellip;</span>
+      </div>
+
+      <div class="section-label mt28">Presence Sensor</div>
+      <div class="status tight">
+        <span id="presDot" class="dot"></span>
+        <span id="presConn" class="status-text">Warte auf Sensor&hellip;</span>
+        <button class="icon-btn" id="openSensorBtn" aria-label="Presence-Sensor-Einstellungen"></button>
+      </div>
+      <div class="status">
+        <span id="personDot" class="dot"></span>
+        <span id="personText" class="status-text">Warte auf Sensor&hellip;</span>
+      </div>
+
+      <div class="section-label manual-only locked">Display</div>
+      <div class="toggle-row manual-only locked">
+        <span class="label" id="displayLabel">Display aus</span>
+        <label class="switch">
+          <input type="checkbox" id="displayToggle" disabled>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="section-label mt28 manual-only locked">Motorstrom (VREF)</div>
+      <div class="slider-row manual-only locked">
+        <input type="range" id="dac" min="350" max="2000" step="5" value="600" disabled>
+      </div>
+
+      <div class="section-label mt28 manual-only locked">Logo-Beleuchtung</div>
+      <div class="led-row manual-only locked">
+        <input type="color" id="color" value="#ffffff" disabled>
+        <span class="hexlabel" id="hex">#FFFFFF</span>
+      </div>
     </div>
 
-    <div class="section-label mt28">Presence Sensor</div>
-    <div class="status tight">
-      <span id="sensorDot" class="dot"></span>
-      <span id="sensorVersion" class="status-text">Warte auf Sensor&hellip;</span>
-    </div>
-    <div class="status">
-      <span id="personDot" class="dot"></span>
-      <span id="personText" class="status-text">Warte auf Sensor&hellip;</span>
+    <!-- ================== Presence-Sensor-Ansicht ================== -->
+    <div class="view" id="sensorView" hidden>
+      <button class="back-btn" id="backBtn" aria-label="Zurück">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+        <span>Zurück</span>
+      </button>
+
+      <h1>Presence Sensor</h1>
+      <div class="subtitle">Human-Presence-Sensor &middot; Einstellungen &amp; Live-Daten</div>
+
+      <div class="section-label mt28">Firmware</div>
+      <div class="status">
+        <span id="fwDot" class="dot"></span>
+        <span id="fwVersion" class="status-text">Warte auf Sensor&hellip;</span>
+      </div>
+
+      <div class="section-label mt28">Erkennung</div>
+      <div class="status">
+        <span id="personDot2" class="dot"></span>
+        <span id="personText2" class="status-text">Warte auf Sensor&hellip;</span>
+      </div>
+
+      <div class="section-label mt28">Empfindlichkeit der Bänder</div>
+      <div class="panel gatecount-row">
+        <span class="gatecount-label">Anzahl Gates</span>
+        <input type="range" id="gateCountRange" min="2" max="8" value="8">
+        <span class="gatecount-val" id="gateCountVal">&ndash;</span>
+      </div>
+      <div class="gates" id="gateList"></div>
     </div>
 
-    <div class="section-label">Display</div>
-    <div class="toggle-row">
-      <span class="label" id="displayLabel">Display aus</span>
-      <label class="switch">
-        <input type="checkbox" id="displayToggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="section-label mt28">Motorstrom (VREF)</div>
-    <div class="slider-row">
-      <input type="range" id="dac" min="350" max="2000" step="5" value="600">
-      <span class="hexlabel" id="dacLabel">&ndash;</span>
-    </div>
-
-    <div class="section-label mt28">Logo-Beleuchtung</div>
-    <div class="led-row">
-      <input type="color" id="color" value="#ffffff">
-      <span class="hexlabel" id="hex">#FFFFFF</span>
-    </div>
   </div>
 
   <script src="/app.js"></script>
